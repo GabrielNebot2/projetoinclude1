@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./UserForm.css";
 
-function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
+function UserForm({ mode = "create", userData = {}, onCancel }) {
   const [formData, setFormData] = useState({
     nome: userData.nome || "",
     email: userData.email || "",
@@ -10,14 +10,41 @@ function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
     cargo: userData.cargo || "Funcionário",
   });
 
+  useEffect(() => {
+    setFormData({
+      nome: userData.nome || "",
+      email: userData.email || "",
+      cpf: userData.cpf || "",
+      senha: "",
+      cargo: userData.cargo || "Funcionário",
+    });
+  }, [userData]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onSave) onSave(formData);
+
+    try {
+      const method = mode === "edit" ? "PUT" : "POST";
+      const url = mode === "edit" ? `/api/users/${userData.id}` : "/api/users";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error();
+
+      alert("Usuário salvo com sucesso!");
+      if (onCancel) onCancel();
+    } catch (error) {
+      alert("Erro ao salvar o usuário.");
+    }
   };
 
   return (
@@ -32,7 +59,6 @@ function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
           onChange={handleChange}
           required
         />
-
         <label>Email</label>
         <input
           type="email"
@@ -41,7 +67,6 @@ function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
           onChange={handleChange}
           required
         />
-
         <label>CPF</label>
         <input
           type="text"
@@ -50,7 +75,6 @@ function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
           onChange={handleChange}
           required
         />
-
         <label>Senha</label>
         <input
           type="password"
@@ -59,20 +83,14 @@ function UserForm({ mode = "create", userData = {}, onSave, onCancel }) {
           onChange={handleChange}
           required={mode === "create"}
         />
-
         <label>Cargo</label>
         <select name="cargo" value={formData.cargo} onChange={handleChange}>
           <option value="Funcionário">Funcionário</option>
           <option value="Gerente">Gerente</option>
         </select>
-
         <div className="form-buttons">
-          <button type="submit" className="btn-save">
-            Salvar
-          </button>
-          <button type="button" className="btn-cancel" onClick={onCancel}>
-            Cancelar
-          </button>
+          <button type="submit" className="btn-save">Salvar</button>
+          <button type="button" className="btn-cancel" onClick={onCancel}>Cancelar</button>
         </div>
       </form>
     </div>
